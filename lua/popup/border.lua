@@ -1,6 +1,6 @@
 package.loaded['popup.border'] = nil
 
-local tbl = require('plenary.tbl')
+local utils = require('popup.utils')
 
 local Border = {}
 
@@ -83,7 +83,7 @@ end
 function Border:new(content_buf_id, content_win_id, content_win_options, border_win_options)
   assert(type(content_win_id) == 'number', "Must supply a valid win_id. It's possible you forgot to call with ':'")
 
-  border_win_options = tbl.apply_defaults(border_win_options, {
+  border_win_options = utils.apply_defaults(border_win_options, {
     border_thickness = Border._default_thickness,
 
     -- Border options, could be passed as a list?
