@@ -4,9 +4,9 @@ package.loaded['popup.border'] = nil
 
 local popup = require('popup')
 
-local test_level = 5
+local test_level = 7
 
-vim.cmd [[highlight PopupColor1 ctermbg=blue guibg=lightblue]]
+vim.cmd [[highlight PopupColor1 ctermbg=lightblue guibg=lightblue]]
 vim.cmd [[highlight PopupColor2 ctermbg=lightcyan guibg=lightcyan]]
 
 if test_level < 1 then
@@ -52,10 +52,33 @@ end
 
 
 if test_level == 5 then
-  popup.create('wrapped longer text', {
+  popup.create('all the plus signs', {
     line = 8,
     col = 55,
     padding = { 0, 3, 0, 3 },
-    border = { 0, 1, 0, 1 }
+    -- border = { 0, 1, 0, 1 }
+    borderchars = {"+"}
+  })
+end
+
+if test_level == 6 then
+  popup.create('all the plus signs', {
+    line = 8,
+    col = 55,
+    padding = { 0, 3, 0, 3 },
+    -- border = { 0, 1, 0, 1 }
+    borderchars = {"-", "+"}
+  })
+end
+
+if test_level == 7 then
+  popup.create('just some longer text', {
+    -- title = 'coool',
+    line = 8,
+    col = 55,
+    pos = "botleft",
+    time = 2000,
+    padding = { 0, 3, 0, 3 },
+    -- border = { 1, 1, 1, 1 }
   })
 end

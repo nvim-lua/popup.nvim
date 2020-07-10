@@ -116,22 +116,22 @@ function popup.create(what, vim_options)
     end
   end
 
-  -- posinvert	When FALSE the value of "pos" is always used.  When
-  -- 		TRUE (the default) and the popup does not fit
-  -- 		vertically and there is more space on the other side
-  -- 		then the popup is placed on the other side of the
-  -- 		position indicated by "line".
+  -- posinvert, When FALSE the value of "pos" is always used.  When
+  -- ,   TRUE (the default) and the popup does not fit
+  -- ,   vertically and there is more space on the other side
+  -- ,   then the popup is placed on the other side of the
+  -- ,   position indicated by "line".
   if dict_default(vim_options, 'posinvert', option_defaults) then
     -- TODO: handle the invert thing
   end
 
-  -- 	fixed		When FALSE (the default), and:
-  -- 			 - "pos" is "botleft" or "topleft", and
-  -- 			 - "wrap" is off, and
-  -- 			 - the popup would be truncated at the right edge of
-  -- 			   the screen, then
-  -- 			the popup is moved to the left so as to fit the
-  -- 			contents on the screen.  Set to TRUE to disable this.
+  -- , fixed    When FALSE (the default), and:
+  -- ,      - "pos" is "botleft" or "topleft", and
+  -- ,      - "wrap" is off, and
+  -- ,      - the popup would be truncated at the right edge of
+  -- ,        the screen, then
+  -- ,     the popup is moved to the left so as to fit the
+  -- ,     contents on the screen.  Set to TRUE to disable this.
 
   win_opts.style = 'minimal'
 
@@ -148,32 +148,13 @@ function popup.create(what, vim_options)
   win_opts.width = utils.bounded(width, vim_options.minwidth, vim_options.maxwidth)
   win_opts.height = utils.bounded(#what, vim_options.minheight, vim_options.maxheight)
 
-  -- textprop	When present the popup is positioned next to a text
-  -- 		property with this name and will move when the text
-  -- 		property moves.  Use an empty string to remove.  See
-  -- 		|popup-textprop-pos|.
+  -- textprop, When present the popup is positioned next to a text
+  -- ,   property with this name and will move when the text
+  -- ,   property moves.  Use an empty string to remove.  See
+  -- ,   |popup-textprop-pos|.
   -- related:
   --   textpropwin
   --   textpropid
-
-  -- border
-  local border_options = {}
-  if vim_options.border then
-    local b_top, b_rgight, b_bot, b_left, b_topleft, b_topright, b_botright, b_botleft
-    if vim_options.borderchars == nil then
-      b_top , b_rgight , b_bot , b_left , b_topleft , b_topright , b_botright , b_botleft = {
-        '-' , '|'      , '-'   , '|'    , '┌'        , '┐'       , '┘'       , '└'
-      }
-    elseif #vim_options.borderchars == 1 then
-      -- TODO: Unpack 8 times cool to the same vars
-      print('...')
-    elseif #vim_options.borderchars == 2 then
-      -- TODO: Unpack to edges & corners
-      print('...')
-    elseif #vim_options.borderchars == 8 then
-      b_top , b_rgight , b_bot , b_left , b_topleft , b_topright , b_botright , b_botleft = vim_options.borderhighlight
-    end
-  end
 
   win_opts.relative = "editor"
 
@@ -205,16 +186,18 @@ function popup.create(what, vim_options)
   if vim_options.time then
     local timer = vim.loop.new_timer()
     timer:start(vim_options.time, 0, vim.schedule_wrap(function()
-      vim.fn.nvim_close_win(win_id, false)
+      vim.fn.nvim_win_close(win_id, false)
     end))
   end
 
   -- Buffer Options
   if vim_options.cursorline then
-    vim.fn.nvim_win_set_option(0, 'cursorline', true)
+    vim.fn.nvim_win_set_option(win_id, 'cursorline', true)
   end
 
-  -- vim.fn.nvim_win_set_option(0, 'wrap', dict_default(vim_options, 'wrap', option_defaults))
+  if vim_options.wrap ~= nil then
+    vim.fn.nvim_win_set_option(win_id, 'wrap', vim_options.wrap)
+  end
 
   -- ===== Not Implemented Options =====
   -- flip: not implemented at the time of writing
@@ -227,22 +210,90 @@ function popup.create(what, vim_options)
   -- scrollbar
   -- scrollbarhighlight
   -- thumbhighlight
-  --
+
   -- tabpage: seems useless
 
   -- Create border
 
-  -- title
-  if vim_options.title then
-    border_options.title = vim_options.title
+  local should_show_border = false
+  local border_options = {}
 
-    if vim_options.border == 0 or vim_options.border == nil then
-      vim_options.border = 1
-      border_options.width = 1
+  -- border    List with numbers, defining the border thickness
+  --     above/right/below/left of the popup (similar to CSS).
+  --     Only values of zero and non-zero are recognized.
+  --     An empty list uses a border all around.
+  if vim_options.border then
+    should_show_border = true
+
+    if vim.tbl_isempty(vim_options.border) then
+      border_options.border_thickness = Border._default_thickness
+    elseif #vim_options.border == 4 then
+      border_options.border_thickness = {
+        top = utils.bounded(vim_options.border[1], 0, 1),
+        right = utils.bounded(vim_options.border[2], 0, 1),
+        bot = utils.bounded(vim_options.border[3], 0, 1),
+        left = utils.bounded(vim_options.border[4], 0, 1),
+      }
+    else
+      error(string.format(
+        "Invalid configuration for border: %s",
+        vim.inspect(vim_options.border)
+      ))
     end
   end
 
-  if vim_options.border then
+  if should_show_border or vim_options.borderchars then
+    should_show_border = true
+
+    -- borderchars  List with characters, defining the character to use
+    --     for the top/right/bottom/left border.  Optionally
+    --     followed by the character to use for the
+    --     topleft/topright/botright/botleft corner.
+    --     Example: ['-', '|', '-', '|', '┌', '┐', '┘', '└']
+    --     When the list has one character it is used for all.
+    --     When the list has two characters the first is used for
+    --     the border lines, the second for the corners.
+    --     By default a double line is used all around when
+    --     'encoding' is "utf-8" and 'ambiwidth' is "single",
+    --     otherwise ASCII characters are used.
+
+    local b_top, b_right, b_bot, b_left, b_topleft, b_topright, b_botright, b_botleft
+    if vim_options.borderchars == nil then
+      b_top , b_right , b_bot , b_left , b_topleft , b_topright , b_botright , b_botleft =
+        "═" , "║"     , "═"   , "║"    , "╔"       , "╗"        , "╝"        , "╚"
+    elseif #vim_options.borderchars == 1 then
+      local b_char = vim_options.borderchars[1]
+      b_top    , b_right , b_bot  , b_left , b_topleft , b_topright , b_botright , b_botleft =
+        b_char , b_char  , b_char , b_char , b_char    , b_char     , b_char     , b_char
+    elseif #vim_options.borderchars == 2 then
+      local b_char = vim_options.borderchars[1]
+      local c_char = vim_options.borderchars[2]
+      b_top    , b_right , b_bot  , b_left , b_topleft , b_topright , b_botright , b_botleft =
+        b_char , b_char  , b_char , b_char , c_char    , c_char     , c_char     , c_char
+    elseif #vim_options.borderchars == 8 then
+      b_top , b_right , b_bot , b_left , b_topleft , b_topright , b_botright , b_botleft = unpack(vim_options.borderchars)
+    else
+      error(string.format('Not enough arguments for "borderchars"'))
+    end
+
+    border_options.top = b_top
+    border_options.bot = b_bot
+    border_options.right = b_right
+    border_options.left = b_left
+    border_options.topleft = b_topleft
+    border_options.topright = b_topright
+    border_options.botright = b_botright
+    border_options.botleft = b_botleft
+  end
+
+  -- title
+  if vim_options.title then
+    -- TODO: Check out how title works with weird border combos.
+    should_show_border = true
+    border_options.title = vim_options.title
+  end
+
+  if should_show_border then
     Border:new(buf, win_id, win_opts, border_options)
   end
 

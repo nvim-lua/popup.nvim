@@ -16,12 +16,79 @@ this and wrap it with C functions to make the APIs compatible.
 
 ## List of Neovim Features Required:
 
-- [ ] Key handlers for `popup_filter`.
+- [ ] Add Z-index for floating windows
+    - [ ] When complete, we can add `zindex` parameter
+- [ ] Key handlers (used for `popup_filter`)
+- [ ] scrollbar for floating windows
+    - [ ] scrollbar
+    - [ ] scrollbarhighlight
+    - [ ] thumbhighlight
 
 Optional:
 
+- [ ] Add forced transparency to a floating window.
+    - Apparently overrides text?
+    - This is for the `mask` feature flag
+
+
+Unlikely (due to technical difficulties):
+
 - [ ] Add `textprop` wrappers?
+    - textprop
+    - textpropwin
+    - textpropid
+- [ ] "close"
+    - But this is mostly because I don't know how to use mouse APIs in nvim. If someone knows. please make an issue in the repo, and maybe we can get it sorted out.
+
+Unlikely (due to not sure if people are using):
+- [ ] tabpage
 
 ## Progress
+
+Suported Features:
+
+- [x] what
+    - string
+    - list of strings
+- [x] popup_create-arguments
+    - [x] border
+    - [x] borderchars
+    - [x] col
+    - [x] cursorline
+    - [x] highlight
+    - [x] line
+    - [x] {max,min}{height,width}
+    - [?] moved
+        - [x] "any"
+        - [ ] "word"
+        - [ ] "WORD"
+        - [ ] "expr"
+        - [ ] (list options)
+    - [x] padding
+    - [?] pos
+        - Somewhat implemented. Doesn't work with borders though.
+    - [x] time
+    - [x] title
+    - [x] wrap
+
+## All known unimplemented vim features at the moment
+
+- borderhighlight
+- firstline
+- hidden
+- ~ pos
+- posinvert
+- fixed
+- filter
+- filtermode
+- mapping
+- callback
+- mouse:
+    - mousemoved
+    - close
+    - drag
+    - resize
+
+- (not implemented in vim yet) flip
 
 Would love contributors ;)
