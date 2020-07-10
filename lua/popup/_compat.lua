@@ -1,0 +1,3 @@
+local compat = {}
+
+return compat

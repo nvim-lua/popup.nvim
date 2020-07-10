@@ -1,0 +1,267 @@
+--- popup.lua
+---
+--- Wrapper to make the popup api from vim in neovim.
+--- Hope to get this part merged in at some point in the future.
+
+local Border = require("popup.border")
+local utils = require("popup.utils")
+
+local popup = {}
+
+popup._pos_map = {
+  topleft="NW",
+  topright="NE",
+  botleft="SW",
+  botright="SE",
+}
+
+
+-- Keep track of hidden popups, so we can load them with popup.show()
+popup._hidden = {}
+
+
+local function dict_default(options, key, default)
+  if options[key] == nil then
+    return default[key]
+  else
+    return options[key]
+  end
+end
+
+
+function popup.create(what, vim_options)
+  local buf
+  if type(what) == 'number' then
+    buf = what
+  else
+    buf = vim.fn.nvim_create_buf(false, true)
+    assert(buf, "Failed to create buffer")
+
+    -- TODO: Handle list of lines
+    if type(what) == 'string' then
+      what = {what}
+    else
+      assert(type(what) == 'table', '"what" must be a table')
+    end
+
+    -- padding    List with numbers, defining the padding
+    --     above/right/below/left of the popup (similar to CSS).
+    --     An empty list uses a padding of 1 all around.  The
+    --     padding goes around the text, inside any border.
+    --     Padding uses the 'wincolor' highlight.
+    --     Example: [1, 2, 1, 3] has 1 line of padding above, 2
+    --     columns on the right, 1 line below and 3 columns on
+    --     the left.
+    if vim_options.padding then
+      local pad_top, pad_right, pad_below, pad_left
+      if vim.tbl_isempty(vim_options.padding) then
+        pad_top = 1
+        pad_right = 1
+        pad_below = 1
+        pad_left = 1
+      else
+        local padding = vim_options.padding
+        pad_top = padding[1] or 0
+        pad_right = padding[2] or 0
+        pad_below = padding[3] or 0
+        pad_left = padding[4] or 0
+      end
+
+      local left_padding = string.rep(' ', pad_left)
+      local right_padding = string.rep(' ', pad_right)
+      for index = 1, #what do
+        what[index] = string.format('%s%s%s', left_padding, what[index], right_padding)
+      end
+
+      for _ = 1, pad_top do
+        table.insert(what, 1, '')
+      end
+
+      for _ = 1, pad_below do
+        table.insert(what, '')
+      end
+    end
+
+    vim.fn.nvim_buf_set_lines(buf, 0, -1, true, what)
+  end
+
+  local option_defaults = {
+    posinvert = true
+  }
+
+  local win_opts = {}
+
+  if vim_options.line then
+    -- TODO: Need to handle "cursor", "cursor+1", ...
+    win_opts.row = vim_options.line
+  else
+    -- TODO: It says it needs to be "vertically cenetered"?...
+    -- wut is that.
+    win_opts.row = 0
+  end
+
+  if vim_options.col then
+    -- TODO: Need to handle "cursor", "cursor+1", ...
+    win_opts.col = vim_options.col
+  else
+    -- TODO: It says it needs to be "horizontally cenetered"?...
+    win_opts.col = 0
+  end
+
+  if vim_options.pos then
+    if vim_options.pos == 'center' then
+      -- TODO: Do centering..
+    else
+      win_opts.anchor = popup._pos_map[vim_options.pos]
+    end
+  end
+
+  -- posinvert	When FALSE the value of "pos" is always used.  When
+  -- 		TRUE (the default) and the popup does not fit
+  -- 		vertically and there is more space on the other side
+  -- 		then the popup is placed on the other side of the
+  -- 		position indicated by "line".
+  if dict_default(vim_options, 'posinvert', option_defaults) then
+    -- TODO: handle the invert thing
+  end
+
+  -- 	fixed		When FALSE (the default), and:
+  -- 			 - "pos" is "botleft" or "topleft", and
+  -- 			 - "wrap" is off, and
+  -- 			 - the popup would be truncated at the right edge of
+  -- 			   the screen, then
+  -- 			the popup is moved to the left so as to fit the
+  -- 			contents on the screen.  Set to TRUE to disable this.
+
+  win_opts.style = 'minimal'
+
+  -- Feels like maxheigh, minheight, maxwidth, minwidth will all be related
+  --
+  -- maxheight  Maximum height of the contents, excluding border and padding.
+  -- minheight  Minimum height of the contents, excluding border and padding.
+  -- maxwidth  Maximum width of the contents, excluding border, padding and scrollbar.
+  -- minwidth  Minimum width of the contents, excluding border, padding and scrollbar.
+  local width = 0
+  for _, v in ipairs(what) do
+    width = math.max(width, #v)
+  end
+  win_opts.width = utils.bounded(width, vim_options.minwidth, vim_options.maxwidth)
+  win_opts.height = utils.bounded(#what, vim_options.minheight, vim_options.maxheight)
+
+  -- textprop	When present the popup is positioned next to a text
+  -- 		property with this name and will move when the text
+  -- 		property moves.  Use an empty string to remove.  See
+  -- 		|popup-textprop-pos|.
+  -- related:
+  --   textpropwin
+  --   textpropid
+
+  -- border
+  local border_options = {}
+  if vim_options.border then
+    local b_top, b_rgight, b_bot, b_left, b_topleft, b_topright, b_botright, b_botleft
+    if vim_options.borderchars == nil then
+      b_top , b_rgight , b_bot , b_left , b_topleft , b_topright , b_botright , b_botleft = {
+        '-' , '|'      , '-'   , '|'    , '┌'        , '┐'       , '┘'       , '└'
+      }
+    elseif #vim_options.borderchars == 1 then
+      -- TODO: Unpack 8 times cool to the same vars
+      print('...')
+    elseif #vim_options.borderchars == 2 then
+      -- TODO: Unpack to edges & corners
+      print('...')
+    elseif #vim_options.borderchars == 8 then
+      b_top , b_rgight , b_bot , b_left , b_topleft , b_topright , b_botright , b_botleft = vim_options.borderhighlight
+    end
+  end
+
+  win_opts.relative = "editor"
+
+  local win_id
+  if vim_options.hidden then
+    assert(false, "I have not implemented this yet and don't know how")
+  else
+    win_id = vim.fn.nvim_open_win(buf, true, win_opts)
+  end
+
+
+  -- Moved, handled after since we need the window ID
+  if vim_options.moved then
+    if vim_options.moved == 'any' then
+      vim.lsp.util.close_preview_autocmd({'CursorMoved', 'CursorMovedI'}, win_id)
+    elseif vim_options.moved == 'word' then
+      -- TODO: Handle word, WORD, expr, and the range functions... which seem hard?
+    end
+  else
+    vim.cmd(
+      string.format(
+        "autocmd BufLeave <buffer=%s> ++once call nvim_win_close(%s, v:false)",
+        buf,
+        win_id
+      )
+    )
+  end
+
+  if vim_options.time then
+    local timer = vim.loop.new_timer()
+    timer:start(vim_options.time, 0, vim.schedule_wrap(function()
+      vim.fn.nvim_close_win(win_id, false)
+    end))
+  end
+
+  -- Buffer Options
+  if vim_options.cursorline then
+    vim.fn.nvim_win_set_option(0, 'cursorline', true)
+  end
+
+  -- vim.fn.nvim_win_set_option(0, 'wrap', dict_default(vim_options, 'wrap', option_defaults))
+
+  -- ===== Not Implemented Options =====
+  -- flip: not implemented at the time of writing
+  -- Mouse:
+  --    mousemoved: no idea how to do the things with the mouse, so it's an exercise for the reader.
+  --    drag: mouses are hard
+  --    resize: mouses are hard
+  --    close: mouses are hard
+  --
+  -- scrollbar
+  -- scrollbarhighlight
+  -- thumbhighlight
+  --
+  -- tabpage: seems useless
+
+  -- Create border
+
+  -- title
+  if vim_options.title then
+    border_options.title = vim_options.title
+
+    if vim_options.border == 0 or vim_options.border == nil then
+      vim_options.border = 1
+      border_options.width = 1
+    end
+  end
+
+  if vim_options.border then
+    Border:new(buf, win_id, win_opts, border_options)
+  end
+
+  if vim_options.highlight then
+    vim.api.nvim_win_set_option(win_id, 'winhl', string.format('Normal:%s', vim_options.highlight))
+  end
+
+  -- TODO: Perhaps there's a way to return an object that looks like a window id,
+  --    but actually has some extra metadata about it.
+  --
+  --    This would make `hidden` a lot easier to manage
+  return win_id
+end
+
+function popup.show(self, asdf)
+end
+
+popup.show = function()
+end
+
+return popup
+
