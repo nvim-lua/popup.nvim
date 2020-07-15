@@ -58,7 +58,7 @@ function Border._create_lines(content_win_options, border_win_options)
   local middle_line = string.format(
     "%s%s%s",
     (left_enabled and border_win_options.left) or '',
-    string.rep('~', content_win_options.width),
+    string.rep(' ', content_win_options.width),
     (right_enabled and border_win_options.right) or ''
   )
 

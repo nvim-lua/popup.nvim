@@ -141,7 +141,7 @@ function popup.create(what, vim_options)
   -- minheight  Minimum height of the contents, excluding border and padding.
   -- maxwidth  Maximum width of the contents, excluding border, padding and scrollbar.
   -- minwidth  Minimum width of the contents, excluding border, padding and scrollbar.
-  local width = 0
+  local width = vim_options.width or 1
   for _, v in ipairs(what) do
     width = math.max(width, #v)
   end
@@ -162,7 +162,11 @@ function popup.create(what, vim_options)
   if vim_options.hidden then
     assert(false, "I have not implemented this yet and don't know how")
   else
-    win_id = vim.fn.nvim_open_win(buf, true, win_opts)
+    local should_enter = vim_options.enter
+    if should_enter == nil then
+      should_enter = true
+    end
+    win_id = vim.fn.nvim_open_win(buf, should_enter, win_opts)
   end
 
 
@@ -176,7 +180,7 @@ function popup.create(what, vim_options)
   else
     vim.cmd(
       string.format(
-        "autocmd BufLeave <buffer=%s> ++once call nvim_win_close(%s, v:false)",
+        "autocmd BufLeave,BufDelete <buffer=%s> ++once call nvim_win_close(%s, v:false)",
         buf,
         win_id
       )
