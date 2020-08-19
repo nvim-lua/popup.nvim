@@ -1,5 +1,3 @@
-package.loaded['popup.border'] = nil
-
 local utils = require('popup.utils')
 
 local Border = {}
@@ -80,7 +78,7 @@ function Border._create_lines(content_win_options, border_win_options)
   return border_lines
 end
 
-function Border:new(content_buf_id, content_win_id, content_win_options, border_win_options)
+function Border:new(content_bufnr, content_win_id, content_win_options, border_win_options)
   assert(type(content_win_id) == 'number', "Must supply a valid win_id. It's possible you forgot to call with ':'")
 
   border_win_options = utils.apply_defaults(border_win_options, {
@@ -104,15 +102,15 @@ function Border:new(content_buf_id, content_win_id, content_win_options, border_
   obj._border_win_options = border_win_options
 
 
-  obj.buf_id = vim.api.nvim_create_buf(false, true)
-  assert(obj.buf_id, "Failed to create border buffer")
+  obj.bufnr = vim.api.nvim_create_buf(false, true)
+  assert(obj.bufnr, "Failed to create border buffer")
 
   obj.contents = Border._create_lines(content_win_options, border_win_options)
-  vim.api.nvim_buf_set_lines(obj.buf_id, 0, -1, false, obj.contents)
+  vim.api.nvim_buf_set_lines(obj.bufnr, 0, -1, false, obj.contents)
 
   local thickness = border_win_options.border_thickness
 
-  obj.win_id = vim.api.nvim_open_win(obj.buf_id, false, {
+  obj.win_id = vim.api.nvim_open_win(obj.bufnr, false, {
     anchor = content_win_options.anchor,
     relative = content_win_options.relative,
     style = "minimal",
@@ -122,15 +120,31 @@ function Border:new(content_buf_id, content_win_id, content_win_options, border_
     height = content_win_options.height + thickness.top + thickness.bot,
   })
 
-  local silent = true
-  vim.cmd(
-    string.format(
-      "autocmd WinLeave,BufLeave,BufDelete <buffer=%s> ++once ++nested %s call nvim_win_close(%s, v:true)",
-      content_buf_id,
-      (silent and "silent!") or "",
-      obj.win_id
-    )
-  )
+  -- local silent = true
+  -- vim.cmd(
+  --   string.format(
+  --     "autocmd WinLeave,BufLeave,BufDelete %s <buffer=%s> ++once ++nested :call popup#close_win(%s, v:true)",
+  --     (silent and "<silent>") or "",
+  --     content_bufnr,
+  --     obj.win_id
+  --   )
+  -- )
+  -- vim.cmd(string.format(
+  --   "autocmd WinClosed,BufLeave,BufDelete,WinLeave <silent> <buffer=%s> ++once ++nested :call popup#close_win(%s, v:true)",
+  --   content_bufnr,
+  --   obj.win_id
+  -- ))
+  vim.cmd(string.format(
+    "autocmd BufLeave,BufDelete <buffer=%s> ++nested ++once :call popup#close_related_win(%s, %s)",
+    content_bufnr,
+    content_win_id,
+    obj.win_id))
+
+  vim.cmd(string.format(
+    "autocmd WinClosed,WinLeave <buffer=%s> ++nested ++once :call popup#close_win(%s, v:true)",
+    content_bufnr,
+    obj.win_id))
+
 
   setmetatable(obj, Border)
 

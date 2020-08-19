@@ -178,9 +178,11 @@ function popup.create(what, vim_options)
       -- TODO: Handle word, WORD, expr, and the range functions... which seem hard?
     end
   else
+    local silent = false
     vim.cmd(
       string.format(
-        "autocmd BufLeave,BufDelete <buffer=%s> ++once call nvim_win_close(%s, v:false)",
+        "autocmd BufLeave,BufDelete %s <buffer=%s> ++nested call popup#close_win(%s, v:true)",
+        (silent and "<silent>") or '',
         buf,
         win_id
       )
@@ -190,7 +192,7 @@ function popup.create(what, vim_options)
   if vim_options.time then
     local timer = vim.loop.new_timer()
     timer:start(vim_options.time, 0, vim.schedule_wrap(function()
-      vim.fn.nvim_win_close(win_id, false)
+      vim.fn['popup#close_win'](win_id, false)
     end))
   end
 
@@ -297,8 +299,9 @@ function popup.create(what, vim_options)
     border_options.title = vim_options.title
   end
 
+  local border = nil
   if should_show_border then
-    Border:new(buf, win_id, win_opts, border_options)
+    border = Border:new(buf, win_id, win_opts, border_options)
   end
 
   if vim_options.highlight then
@@ -309,7 +312,9 @@ function popup.create(what, vim_options)
   --    but actually has some extra metadata about it.
   --
   --    This would make `hidden` a lot easier to manage
-  return win_id
+  return win_id, {
+    border = border,
+  }
 end
 
 function popup.show(self, asdf)
