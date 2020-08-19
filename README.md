@@ -3,6 +3,16 @@
 [WIP] An implementation of the Popup API from vim in Neovim. Hope to upstream
 when complete
 
+## Installation
+
+```vim
+" This is a requirement, which implements some useful window management
+"   items for neovim
+Plug 'nvim-lua/plenary.nvim'
+
+Plug 'nvim-lua/popup.nvim'
+```
+
 ## Goals
 
 Provide an API that is compatible with the vim `popup_*` APIs. After

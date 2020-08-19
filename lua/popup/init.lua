@@ -3,7 +3,7 @@
 --- Wrapper to make the popup api from vim in neovim.
 --- Hope to get this part merged in at some point in the future.
 
-local Border = require("popup.border")
+local Border = require("plenary.window.border")
 local utils = require("popup.utils")
 
 local popup = {}
@@ -30,12 +30,12 @@ end
 
 
 function popup.create(what, vim_options)
-  local buf
+  local bufnr
   if type(what) == 'number' then
-    buf = what
+    bufnr = what
   else
-    buf = vim.fn.nvim_create_buf(false, true)
-    assert(buf, "Failed to create buffer")
+    bufnr = vim.fn.nvim_create_buf(false, true)
+    assert(bufnr, "Failed to create buffer")
 
     -- TODO: Handle list of lines
     if type(what) == 'string' then
@@ -82,7 +82,7 @@ function popup.create(what, vim_options)
       end
     end
 
-    vim.fn.nvim_buf_set_lines(buf, 0, -1, true, what)
+    vim.fn.nvim_buf_set_lines(bufnr, 0, -1, true, what)
   end
 
   local option_defaults = {
@@ -166,7 +166,7 @@ function popup.create(what, vim_options)
     if should_enter == nil then
       should_enter = true
     end
-    win_id = vim.fn.nvim_open_win(buf, should_enter, win_opts)
+    win_id = vim.fn.nvim_open_win(bufnr, should_enter, win_opts)
   end
 
 
@@ -183,7 +183,7 @@ function popup.create(what, vim_options)
       string.format(
         "autocmd BufLeave,BufDelete %s <buffer=%s> ++nested call popup#close_win(%s, v:true)",
         (silent and "<silent>") or '',
-        buf,
+        bufnr,
         win_id
       )
     )
@@ -301,7 +301,7 @@ function popup.create(what, vim_options)
 
   local border = nil
   if should_show_border then
-    border = Border:new(buf, win_id, win_opts, border_options)
+    border = Border:new(bufnr, win_id, win_opts, border_options)
   end
 
   if vim_options.highlight then
@@ -324,4 +324,3 @@ popup.show = function()
 end
 
 return popup
-

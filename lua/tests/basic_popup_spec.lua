@@ -1,10 +1,8 @@
-
-package.loaded['popup'] = nil
-package.loaded['popup.border'] = nil
+require('plenary.reload').reload_module('popup')
 
 local popup = require('popup')
 
-local test_level = 7
+local test_level = 3
 
 vim.cmd [[highlight PopupColor1 ctermbg=lightblue guibg=lightblue]]
 vim.cmd [[highlight PopupColor2 ctermbg=lightcyan guibg=lightcyan]]
@@ -28,7 +26,7 @@ if test_level < 2 then
     })
 end
 
-if test_level < 3 then
+if test_level == 3 then
   -- Test some borders
   popup.create('hello border', {
     line = 2,
@@ -38,20 +36,20 @@ if test_level < 3 then
 end
 
 
-if test_level == 3 then
+if test_level == 4 then
   popup.create('hello padding', {
     line = 2, col = 23, padding = {}
   })
 end
 
-if test_level == 4 then
+if test_level == 5 then
   popup.create('hello padding', {
     line = 2, col = 23, border = {}, padding = {}
   })
 end
 
 
-if test_level == 5 then
+if test_level == 6 then
   popup.create('all the plus signs', {
     line = 8,
     col = 55,
@@ -61,7 +59,7 @@ if test_level == 5 then
   })
 end
 
-if test_level == 6 then
+if test_level == 7 then
   popup.create('all the plus signs', {
     line = 8,
     col = 55,
@@ -71,7 +69,7 @@ if test_level == 6 then
   })
 end
 
-if test_level == 7 then
+if test_level == 8 then
   popup.create('just some longer text', {
     -- title = 'coool',
     line = 8,
