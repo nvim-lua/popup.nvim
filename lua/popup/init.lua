@@ -221,7 +221,7 @@ function popup.create(what, vim_options)
 
   -- Create border
 
-  local should_show_border = false
+  local should_show_border = nil
   local border_options = {}
 
   -- border    List with numbers, defining the border thickness
@@ -231,7 +231,7 @@ function popup.create(what, vim_options)
   if vim_options.border then
     should_show_border = true
 
-    if vim.tbl_isempty(vim_options.border) then
+    if type(vim_options.border) == 'boolean' or vim.tbl_isempty(vim_options.border) then
       border_options.border_thickness = Border._default_thickness
     elseif #vim_options.border == 4 then
       border_options.border_thickness = {
@@ -246,9 +246,11 @@ function popup.create(what, vim_options)
         vim.inspect(vim_options.border)
       ))
     end
+  elseif vim_options.border == false then
+    should_show_border = false
   end
 
-  if should_show_border or vim_options.borderchars then
+  if (should_show_border == nil or should_show_border) and vim_options.borderchars then
     should_show_border = true
 
     -- borderchars  List with characters, defining the character to use
@@ -295,7 +297,6 @@ function popup.create(what, vim_options)
   -- title
   if vim_options.title then
     -- TODO: Check out how title works with weird border combos.
-    should_show_border = true
     border_options.title = vim_options.title
   end
 
