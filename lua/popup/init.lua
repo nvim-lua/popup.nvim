@@ -4,6 +4,7 @@
 --- Hope to get this part merged in at some point in the future.
 
 local Border = require("plenary.window.border")
+local Window = require("plenary.window")
 local utils = require("popup.utils")
 
 local popup = {}
@@ -181,7 +182,7 @@ function popup.create(what, vim_options)
     local silent = false
     vim.cmd(
       string.format(
-        "autocmd BufLeave,BufDelete %s <buffer=%s> ++nested call popup#close_win(%s, v:true)",
+        "autocmd BufLeave,BufDelete %s <buffer=%s> ++nested :lua require('plenary.window').try_close(%s, true)",
         (silent and "<silent>") or '',
         bufnr,
         win_id
@@ -192,7 +193,7 @@ function popup.create(what, vim_options)
   if vim_options.time then
     local timer = vim.loop.new_timer()
     timer:start(vim_options.time, 0, vim.schedule_wrap(function()
-      vim.fn['popup#close_win'](win_id, false)
+      Window.try_close(win_id, false)
     end))
   end
 
