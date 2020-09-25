@@ -94,7 +94,18 @@ function popup.create(what, vim_options)
 
   if vim_options.line then
     -- TODO: Need to handle "cursor", "cursor+1", ...
-    win_opts.row = vim_options.line
+    if type(vim_options.line) == 'string' then
+      assert(string.find(vim_options.line,'^cursor') ~= nil, "Invalid option")
+      local line = vim.fn.getcurpos()[2]
+      if (vim_options.line):match "cursor%+(%d+)" then
+        line = line + tonumber((vim_options.line):match "cursor%+(%d+)")
+      elseif (vim_options.line):match "cursor%-(%d+)" then
+        line = line - tonumber((vim_options.line):match "cursor%-(%d+)")
+      end
+      win_opts.row = line
+    else
+      win_opts.row = vim_options.line
+    end
   else
     -- TODO: It says it needs to be "vertically cenetered"?...
     -- wut is that.
@@ -103,7 +114,18 @@ function popup.create(what, vim_options)
 
   if vim_options.col then
     -- TODO: Need to handle "cursor", "cursor+1", ...
-    win_opts.col = vim_options.col
+    if type(vim_options.col) == 'string' then
+      assert(string.find(vim_options.col,'^cursor') ~= nil, "Invalid option")
+      local col = vim.fn.getcurpos()[3]
+      if (vim_options.col):match "cursor%+(%d+)" then
+        col = col + tonumber((vim_options.col):match "cursor%+(%d+)")
+      elseif (vim_options.col):match "cursor%-(%d+)" then
+        col = col - tonumber((vim_options.col):match "cursor%-(%d+)")
+      end
+      win_opts.col = col
+    else
+      win_opts.col = vim_options.col
+    end
   else
     -- TODO: It says it needs to be "horizontally cenetered"?...
     win_opts.col = 0
