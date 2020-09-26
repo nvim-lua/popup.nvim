@@ -91,18 +91,23 @@ function popup.create(what, vim_options)
   }
 
   local win_opts = {}
+  win_opts.relative = "editor"
+
+  local cursor_relative_pos = function(pos_str, dim)
+    assert(string.find(pos_str,'^cursor'), "Invalid value for " .. dim)
+    win_opts.relative = 'cursor'
+    local line = 0
+    if (pos_str):match "cursor%+(%d+)" then
+      line = line + tonumber((pos_str):match "cursor%+(%d+)")
+    elseif (pos_str):match "cursor%-(%d+)" then
+      line = line - tonumber((pos_str):match "cursor%-(%d+)")
+    end
+    return line
+  end
 
   if vim_options.line then
-    -- TODO: Need to handle "cursor", "cursor+1", ...
     if type(vim_options.line) == 'string' then
-      assert(string.find(vim_options.line,'^cursor') ~= nil, "Invalid option")
-      local line = vim.fn.getcurpos()[2]
-      if (vim_options.line):match "cursor%+(%d+)" then
-        line = line + tonumber((vim_options.line):match "cursor%+(%d+)")
-      elseif (vim_options.line):match "cursor%-(%d+)" then
-        line = line - tonumber((vim_options.line):match "cursor%-(%d+)")
-      end
-      win_opts.row = line
+      win_opts.row = cursor_relative_pos(vim_options.line, "row")
     else
       win_opts.row = vim_options.line
     end
@@ -113,16 +118,8 @@ function popup.create(what, vim_options)
   end
 
   if vim_options.col then
-    -- TODO: Need to handle "cursor", "cursor+1", ...
     if type(vim_options.col) == 'string' then
-      assert(string.find(vim_options.col,'^cursor') ~= nil, "Invalid option")
-      local col = vim.fn.getcurpos()[3]
-      if (vim_options.col):match "cursor%+(%d+)" then
-        col = col + tonumber((vim_options.col):match "cursor%+(%d+)")
-      elseif (vim_options.col):match "cursor%-(%d+)" then
-        col = col - tonumber((vim_options.col):match "cursor%-(%d+)")
-      end
-      win_opts.col = col
+      win_opts.col = cursor_relative_pos(vim_options.col, "col")
     else
       win_opts.col = vim_options.col
     end
@@ -178,8 +175,6 @@ function popup.create(what, vim_options)
   -- related:
   --   textpropwin
   --   textpropid
-
-  win_opts.relative = "editor"
 
   local win_id
   if vim_options.hidden then
