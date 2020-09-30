@@ -91,10 +91,26 @@ function popup.create(what, vim_options)
   }
 
   local win_opts = {}
+  win_opts.relative = "editor"
+
+  local cursor_relative_pos = function(pos_str, dim)
+    assert(string.find(pos_str,'^cursor'), "Invalid value for " .. dim)
+    win_opts.relative = 'cursor'
+    local line = 0
+    if (pos_str):match "cursor%+(%d+)" then
+      line = line + tonumber((pos_str):match "cursor%+(%d+)")
+    elseif (pos_str):match "cursor%-(%d+)" then
+      line = line - tonumber((pos_str):match "cursor%-(%d+)")
+    end
+    return line
+  end
 
   if vim_options.line then
-    -- TODO: Need to handle "cursor", "cursor+1", ...
-    win_opts.row = vim_options.line
+    if type(vim_options.line) == 'string' then
+      win_opts.row = cursor_relative_pos(vim_options.line, "row")
+    else
+      win_opts.row = vim_options.line
+    end
   else
     -- TODO: It says it needs to be "vertically cenetered"?...
     -- wut is that.
@@ -102,8 +118,11 @@ function popup.create(what, vim_options)
   end
 
   if vim_options.col then
-    -- TODO: Need to handle "cursor", "cursor+1", ...
-    win_opts.col = vim_options.col
+    if type(vim_options.col) == 'string' then
+      win_opts.col = cursor_relative_pos(vim_options.col, "col")
+    else
+      win_opts.col = vim_options.col
+    end
   else
     -- TODO: It says it needs to be "horizontally cenetered"?...
     win_opts.col = 0
@@ -156,8 +175,6 @@ function popup.create(what, vim_options)
   -- related:
   --   textpropwin
   --   textpropid
-
-  win_opts.relative = "editor"
 
   local win_id
   if vim_options.hidden then
