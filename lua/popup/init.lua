@@ -199,7 +199,7 @@ function popup.create(what, vim_options)
     local silent = false
     vim.cmd(
       string.format(
-        "autocmd BufLeave,BufDelete %s <buffer=%s> ++nested :lua require('plenary.window').try_close(%s, true)",
+        "autocmd BufLeave,BufDelete %s <buffer=%s> ++once ++nested :lua require('plenary.window').try_close(%s, true)",
         (silent and "<silent>") or '',
         bufnr,
         win_id
