@@ -80,3 +80,13 @@ if test_level == 8 then
     -- border = { 1, 1, 1, 1 }
   })
 end
+
+if test_level == 9 then
+  local bufnr = vim.api.nvim_create_buf(false, false)
+  vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, {'pass bufnr 1', 'pass bufnr 2'})
+  popup.create(bufnr, {
+    line = 8,
+    col = 55,
+    minwidth = 20,
+  })
+end

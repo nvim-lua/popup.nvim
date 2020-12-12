@@ -162,11 +162,17 @@ function popup.create(what, vim_options)
   -- maxwidth  Maximum width of the contents, excluding border, padding and scrollbar.
   -- minwidth  Minimum width of the contents, excluding border, padding and scrollbar.
   local width = vim_options.width or 1
-  for _, v in ipairs(what) do
-    width = math.max(width, #v)
+  local height
+  if type(what) == 'number' then
+    height = vim.api.nvim_buf_line_count(what)
+  else
+    for _, v in ipairs(what) do
+      width = math.max(width, #v)
+    end
+    height = #what
   end
   win_opts.width = utils.bounded(width, vim_options.minwidth, vim_options.maxwidth)
-  win_opts.height = utils.bounded(#what, vim_options.minheight, vim_options.maxheight)
+  win_opts.height = utils.bounded(height, vim_options.minheight, vim_options.maxheight)
 
   -- textprop, When present the popup is positioned next to a text
   -- ,   property with this name and will move when the text
