@@ -29,6 +29,8 @@ local function dict_default(options, key, default)
   end
 end
 
+-- Callbacks to be called later by popup.execute_callback
+popup._callbacks = {}
 
 function popup.create(what, vim_options)
   local bufnr
@@ -341,6 +343,18 @@ function popup.create(what, vim_options)
     vim.api.nvim_set_current_win(win_id)
   end
 
+  -- callback
+  if vim_options.callback then
+    popup._callbacks[bufnr] = function()
+      -- (jbyuki): Giving win_id is pointless here because it's closed right afterwards
+      -- but it might make more sense once hidden is implemented
+      local row, _ = unpack(vim.api.nvim_win_get_cursor(win_id))
+      vim_options.callback(win_id, what[row])
+      vim.api.nvim_win_close(win_id, true)
+    end
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<CR>', '<cmd>lua require"popup".execute_callback(' .. bufnr .. ')<CR>', {noremap = true})
+  end
+
   -- TODO: Perhaps there's a way to return an object that looks like a window id,
   --    but actually has some extra metadata about it.
   --
@@ -351,6 +365,14 @@ function popup.create(what, vim_options)
 end
 
 function popup.show(self, asdf)
+end
+
+function popup.execute_callback(bufnr)
+  if popup._callbacks[bufnr] then
+    local wrapper = popup._callbacks[bufnr]
+    wrapper()
+    popup._callbacks[bufnr] = nil
+  end
 end
 
 popup.show = function()
