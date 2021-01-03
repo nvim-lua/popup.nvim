@@ -2,7 +2,7 @@ require('plenary.reload').reload_module('popup')
 
 local popup = require('popup')
 
-local test_level = 3
+local test_level = 10
 
 vim.cmd [[highlight PopupColor1 ctermbg=lightblue guibg=lightblue]]
 vim.cmd [[highlight PopupColor2 ctermbg=lightcyan guibg=lightcyan]]
@@ -88,5 +88,16 @@ if test_level == 9 then
     line = 8,
     col = 55,
     minwidth = 20,
+  })
+end
+
+if test_level == 10 then
+  popup.create({ "option 1", "option 2" }, {
+    line = "cursor+2",
+    col = "cursor+2",
+	border = { 1, 1, 1, 1},
+	enter = true,
+	cursorline = true,
+	callback = function(win_id, sel) print(sel) end,
   })
 end
