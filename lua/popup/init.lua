@@ -38,6 +38,8 @@ function popup.create(what, vim_options)
     bufnr = vim.api.nvim_create_buf(false, true)
     assert(bufnr, "Failed to create buffer")
 
+    vim.api.nvim_buf_set_option(bufnr, "bufhidden", "wipe")
+
     -- TODO: Handle list of lines
     if type(what) == 'string' then
       what = {what}
