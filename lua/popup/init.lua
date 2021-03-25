@@ -95,6 +95,34 @@ function popup.create(what, vim_options)
   local win_opts = {}
   win_opts.relative = "editor"
 
+  -- Feels like maxheigh, minheight, maxwidth, minwidth will all be related
+  --
+  -- maxheight  Maximum height of the contents, excluding border and padding.
+  -- minheight  Minimum height of the contents, excluding border and padding.
+  -- maxwidth  Maximum width of the contents, excluding border, padding and scrollbar.
+  -- minwidth  Minimum width of the contents, excluding border, padding and scrollbar.
+  local width = vim_options.width or 1
+  local height
+  if type(what) == 'number' then
+    height = vim.api.nvim_buf_line_count(what)
+  else
+    for _, v in ipairs(what) do
+      width = math.max(width, #v)
+    end
+    height = #what
+  end
+  win_opts.width = utils.bounded(width, vim_options.minwidth, vim_options.maxwidth)
+  win_opts.height = utils.bounded(height, vim_options.minheight, vim_options.maxheight)
+
+  if vim_options.pos then
+    if vim_options.pos == 'center' then
+      vim_options.line = math.floor(((vim.o.lines - win_opts.height) / 2) - 1)
+      vim_options.col = math.floor((vim.o.columns - win_opts.width) / 2)
+    else
+      win_opts.anchor = popup._pos_map[vim_options.pos]
+    end
+  end
+
   local cursor_relative_pos = function(pos_str, dim)
     assert(string.find(pos_str,'^cursor'), "Invalid value for " .. dim)
     win_opts.relative = 'cursor'
@@ -130,14 +158,6 @@ function popup.create(what, vim_options)
     win_opts.col = 0
   end
 
-  if vim_options.pos then
-    if vim_options.pos == 'center' then
-      -- TODO: Do centering..
-    else
-      win_opts.anchor = popup._pos_map[vim_options.pos]
-    end
-  end
-
   -- posinvert, When FALSE the value of "pos" is always used.  When
   -- ,   TRUE (the default) and the popup does not fit
   -- ,   vertically and there is more space on the other side
@@ -156,25 +176,6 @@ function popup.create(what, vim_options)
   -- ,     contents on the screen.  Set to TRUE to disable this.
 
   win_opts.style = 'minimal'
-
-  -- Feels like maxheigh, minheight, maxwidth, minwidth will all be related
-  --
-  -- maxheight  Maximum height of the contents, excluding border and padding.
-  -- minheight  Minimum height of the contents, excluding border and padding.
-  -- maxwidth  Maximum width of the contents, excluding border, padding and scrollbar.
-  -- minwidth  Minimum width of the contents, excluding border, padding and scrollbar.
-  local width = vim_options.width or 1
-  local height
-  if type(what) == 'number' then
-    height = vim.api.nvim_buf_line_count(what)
-  else
-    for _, v in ipairs(what) do
-      width = math.max(width, #v)
-    end
-    height = #what
-  end
-  win_opts.width = utils.bounded(width, vim_options.minwidth, vim_options.maxwidth)
-  win_opts.height = utils.bounded(height, vim_options.minheight, vim_options.maxheight)
 
   -- textprop, When present the popup is positioned next to a text
   -- ,   property with this name and will move when the text
