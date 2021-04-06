@@ -187,11 +187,10 @@ function popup.create(what, vim_options)
   if vim_options.hidden then
     assert(false, "I have not implemented this yet and don't know how")
   else
-    local should_enter = vim_options.enter
-    if should_enter == nil then
-      should_enter = true
-    end
-    win_id = vim.api.nvim_open_win(bufnr, should_enter, win_opts)
+    -- We can't immediately enter tehe window, but have to delay this until after the border has been drawn
+    -- (see below). This is only required in the case 'relative=cursor' and 'border=true'.
+    -- TODO: Is this a desired behavior or a bug of 'nvim_open_win'?
+    win_id = vim.api.nvim_open_win(bufnr, false, win_opts)
   end
 
 
@@ -328,6 +327,15 @@ function popup.create(what, vim_options)
   local border = nil
   if should_show_border then
     border = Border:new(bufnr, win_id, win_opts, border_options)
+  end
+
+  local should_enter = vim_options.enter
+  if should_enter == nil then
+    should_enter = true
+  end
+
+  if should_enter then
+    vim.api.nvim_set_current_win(win_id)
   end
 
   if vim_options.highlight then
