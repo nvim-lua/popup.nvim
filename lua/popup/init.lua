@@ -99,10 +99,9 @@ function popup.create(what, vim_options)
     assert(string.find(pos_str,'^cursor'), "Invalid value for " .. dim)
     win_opts.relative = 'cursor'
     local line = 0
-    if (pos_str):match "cursor%+(%d+)" then
-      line = line + tonumber((pos_str):match "cursor%+(%d+)")
-    elseif (pos_str):match "cursor%-(%d+)" then
-      line = line - tonumber((pos_str):match "cursor%-(%d+)")
+    local m = (pos_str):match "cursor([+-]%d+)"
+    if m then
+      line = line + tonumber(m)
     end
     return line
   end
@@ -114,7 +113,7 @@ function popup.create(what, vim_options)
       win_opts.row = vim_options.line
     end
   else
-    -- TODO: It says it needs to be "vertically cenetered"?...
+    -- TODO: It says it needs to be "vertically centered"?...
     -- wut is that.
     win_opts.row = 0
   end
@@ -126,7 +125,7 @@ function popup.create(what, vim_options)
       win_opts.col = vim_options.col
     end
   else
-    -- TODO: It says it needs to be "horizontally cenetered"?...
+    -- TODO: It says it needs to be "horizontally centered"?...
     win_opts.col = 0
   end
 
@@ -157,7 +156,7 @@ function popup.create(what, vim_options)
 
   win_opts.style = 'minimal'
 
-  -- Feels like maxheigh, minheight, maxwidth, minwidth will all be related
+  -- Feels like maxheight, minheight, maxwidth, minwidth will all be related
   --
   -- maxheight  Maximum height of the contents, excluding border and padding.
   -- minheight  Minimum height of the contents, excluding border and padding.
@@ -188,11 +187,10 @@ function popup.create(what, vim_options)
   if vim_options.hidden then
     assert(false, "I have not implemented this yet and don't know how")
   else
-    local should_enter = vim_options.enter
-    if should_enter == nil then
-      should_enter = true
-    end
-    win_id = vim.api.nvim_open_win(bufnr, should_enter, win_opts)
+    -- We can't immediately enter tehe window, but have to delay this until after the border has been drawn
+    -- (see below). This is only required in the case 'relative=cursor' and 'border=true'.
+    -- TODO: Is this a desired behavior or a bug of 'nvim_open_win'?
+    win_id = vim.api.nvim_open_win(bufnr, false, win_opts)
   end
 
 
@@ -283,7 +281,7 @@ function popup.create(what, vim_options)
     --     for the top/right/bottom/left border.  Optionally
     --     followed by the character to use for the
     --     topleft/topright/botright/botleft corner.
-    --     Example: ['-', '|', '-', '|', '┌', '┐', '┘', '└']
+    --     Example: {'-', '|', '-', '|', '┌', '┐', '┘', '└'}
     --     When the list has one character it is used for all.
     --     When the list has two characters the first is used for
     --     the border lines, the second for the corners.
@@ -331,6 +329,15 @@ function popup.create(what, vim_options)
     border = Border:new(bufnr, win_id, win_opts, border_options)
   end
 
+  local should_enter = vim_options.enter
+  if should_enter == nil then
+    should_enter = true
+  end
+
+  if should_enter then
+    vim.api.nvim_set_current_win(win_id)
+  end
+
   if vim_options.highlight then
     vim.api.nvim_win_set_option(win_id, 'winhl', string.format('Normal:%s', vim_options.highlight))
   end
@@ -347,7 +354,5 @@ end
 function popup.show(self, asdf)
 end
 
-popup.show = function()
-end
 
 return popup
