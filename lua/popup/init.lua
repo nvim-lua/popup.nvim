@@ -335,6 +335,10 @@ function popup.create(what, vim_options)
     vim.api.nvim_win_set_option(win_id, 'winhl', string.format('Normal:%s', vim_options.highlight))
   end
 
+  if vim_options.borderhighlight then
+    vim.api.nvim_win_set_option(border.win_id, 'winhl', string.format('Normal:%s', vim_options.borderhighlight))
+  end
+
   -- TODO: Perhaps there's a way to return an object that looks like a window id,
   --    but actually has some extra metadata about it.
   --
