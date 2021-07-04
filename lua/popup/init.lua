@@ -20,6 +20,8 @@ popup._pos_map = {
 -- Keep track of hidden popups, so we can load them with popup.show()
 popup._hidden = {}
 
+-- Keep track of popup borders, so we don't have to pass them between functions
+popup._borders = {}
 
 local function dict_default(options, key, default)
   if options[key] == nil then
@@ -157,7 +159,7 @@ function popup.create(what, vim_options)
 
   win_opts.style = 'minimal'
 
-  -- Feels like maxheigh, minheight, maxwidth, minwidth will all be related
+  -- Feels like maxheight, minheight, maxwidth, minwidth will all be related
   --
   -- maxheight  Maximum height of the contents, excluding border and padding.
   -- minheight  Minimum height of the contents, excluding border and padding.
@@ -329,6 +331,7 @@ function popup.create(what, vim_options)
   local border = nil
   if should_show_border then
     border = Border:new(bufnr, win_id, win_opts, border_options)
+    popup._borders[win_id] = border
   end
 
   if vim_options.highlight then
@@ -342,6 +345,27 @@ function popup.create(what, vim_options)
   return win_id, {
     border = border,
   }
+end
+
+function popup.resize(win_id, vim_options)
+  -- Create win_options
+  local win_options = vim_options
+  win_options.width = win_options.width or vim.api.nvim_win_get_width(win_id)
+  win_options.height = win_options.height or vim.api.nvim_win_get_height(win_id)
+
+  local current_pos = vim.api.nvim_win_get_position(win_id)
+  win_options.row = win_options.row or current_pos[1]
+  win_options.col = win_options.col or current_pos[2]
+
+  -- Update content window
+  vim.api.nvim_win_set_config(win_id, win_options)
+
+  -- Update border window (if present)
+  local border = popup._borders[win_id]
+  if border ~= nil then
+    border:resize(win_options, border._border_win_options)
+  end
+
 end
 
 function popup.show(self, asdf)
