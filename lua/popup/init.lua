@@ -116,7 +116,7 @@ function popup.create(what, vim_options)
       win_opts.row = vim_options.line
     end
   else
-    -- TODO: It says it needs to be "vertically cenetered"?...
+    -- TODO: It says it needs to be "vertically centered"?...
     -- wut is that.
     win_opts.row = 0
   end
@@ -128,7 +128,7 @@ function popup.create(what, vim_options)
       win_opts.col = vim_options.col
     end
   else
-    -- TODO: It says it needs to be "horizontally cenetered"?...
+    -- TODO: It says it needs to be "horizontally centered"?...
     win_opts.col = 0
   end
 
@@ -349,21 +349,23 @@ end
 
 function popup.resize(win_id, vim_options)
   -- Create win_options
-  local win_options = vim_options
-  win_options.width = win_options.width or vim.api.nvim_win_get_width(win_id)
-  win_options.height = win_options.height or vim.api.nvim_win_get_height(win_id)
+  local win_opts = {}
+  win_opts.relative = 'editor'
+
+  win_opts.width = vim_options.width or vim.api.nvim_win_get_width(win_id)
+  win_opts.height = vim_options.height or vim.api.nvim_win_get_height(win_id)
 
   local current_pos = vim.api.nvim_win_get_position(win_id)
-  win_options.row = win_options.row or current_pos[1]
-  win_options.col = win_options.col or current_pos[2]
+  win_opts.row = vim_options.line or current_pos[1]
+  win_opts.col = vim_options.col or current_pos[2]
 
   -- Update content window
-  vim.api.nvim_win_set_config(win_id, win_options)
+  vim.api.nvim_win_set_config(win_id, win_opts)
 
   -- Update border window (if present)
   local border = popup._borders[win_id]
   if border ~= nil then
-    border:resize(win_options, border._border_win_options)
+    border:set_size(win_opts, border._border_win_options)
   end
 
 end
