@@ -136,6 +136,8 @@ function popup.create(what, vim_options)
     else
       win_opts.anchor = popup._pos_map[vim_options.pos]
     end
+  else
+    win_opts.anchor = "NW" -- This is the default, but makes `posinvert` easier to implement
   end
 
   -- , fixed    When FALSE (the default), and:
