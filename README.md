@@ -77,6 +77,7 @@ Suported Features:
     - [x] padding
     - [?] pos
         - Somewhat implemented. Doesn't work with borders though.
+    - [x] posinvert
     - [x] time
     - [x] title
     - [x] wrap
@@ -87,7 +88,6 @@ Suported Features:
 - firstline
 - hidden
 - ~ pos
-- posinvert
 - fixed
 - filter
 - filtermode
