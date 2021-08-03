@@ -26,8 +26,6 @@ this and wrap it with C functions to make the APIs compatible.
 
 ## List of Neovim Features Required:
 
-- [ ] Add Z-index for floating windows
-    - [ ] When complete, we can add `zindex` parameter
 - [ ] Key handlers (used for `popup_filter`)
 - [ ] scrollbar for floating windows
     - [ ] scrollbar
@@ -80,6 +78,7 @@ Suported Features:
     - [x] time
     - [x] title
     - [x] wrap
+    - [x] zindex
 
 ## All known unimplemented vim features at the moment
 
