@@ -136,15 +136,8 @@ function popup.create(what, vim_options)
     else
       win_opts.anchor = popup._pos_map[vim_options.pos]
     end
-  end
-
-  -- posinvert, When FALSE the value of "pos" is always used.  When
-  -- ,   TRUE (the default) and the popup does not fit
-  -- ,   vertically and there is more space on the other side
-  -- ,   then the popup is placed on the other side of the
-  -- ,   position indicated by "line".
-  if dict_default(vim_options, 'posinvert', option_defaults) then
-    -- TODO: handle the invert thing
+  else
+    win_opts.anchor = "NW" -- This is the default, but makes `posinvert` easier to implement
   end
 
   -- , fixed    When FALSE (the default), and:
@@ -157,7 +150,7 @@ function popup.create(what, vim_options)
 
   win_opts.style = 'minimal'
 
-  -- Feels like maxheigh, minheight, maxwidth, minwidth will all be related
+  -- Feels like maxheight, minheight, maxwidth, minwidth will all be related
   --
   -- maxheight  Maximum height of the contents, excluding border and padding.
   -- minheight  Minimum height of the contents, excluding border and padding.
@@ -175,6 +168,25 @@ function popup.create(what, vim_options)
   end
   win_opts.width = utils.bounded(width, vim_options.minwidth, vim_options.maxwidth)
   win_opts.height = utils.bounded(height, vim_options.minheight, vim_options.maxheight)
+
+  -- posinvert, When FALSE the value of "pos" is always used.  When
+  -- ,   TRUE (the default) and the popup does not fit
+  -- ,   vertically and there is more space on the other side
+  -- ,   then the popup is placed on the other side of the
+  -- ,   position indicated by "line".
+  if dict_default(vim_options, 'posinvert', option_defaults) then
+    if win_opts.anchor == "NW" or win_opts.anchor == "NE" then
+      if win_opts.row + win_opts.height > vim.o.lines and win_opts.row * 2 > vim.o.lines then
+        -- Don't know why, but this is how vim adjusts it
+        win_opts.row = win_opts.row - win_opts.height - 2
+      end
+    elseif win_opts.anchor == "SW" or win_opts.anchor == "SE" then
+      if win_opts.row - win_opts.height < 0 and win_opts.row * 2 < vim.o.lines then
+        -- Don't know why, but this is how vim adjusts it
+        win_opts.row = win_opts.row + win_opts.height + 2
+      end
+    end
+  end
 
   -- textprop, When present the popup is positioned next to a text
   -- ,   property with this name and will move when the text
