@@ -29,6 +29,8 @@ local function dict_default(options, key, default)
   end
 end
 
+-- Callbacks to be called later by popup.execute_callback
+popup._callbacks = {}
 
 function popup.create(what, vim_options)
   local bufnr
@@ -200,11 +202,7 @@ function popup.create(what, vim_options)
   if vim_options.hidden then
     assert(false, "I have not implemented this yet and don't know how")
   else
-    local should_enter = vim_options.enter
-    if should_enter == nil then
-      should_enter = true
-    end
-    win_id = vim.api.nvim_open_win(bufnr, should_enter, win_opts)
+    win_id = vim.fn.nvim_open_win(bufnr, false, win_opts)
   end
 
 
@@ -351,6 +349,30 @@ function popup.create(what, vim_options)
     vim.api.nvim_win_set_option(border.win_id, 'winhl', string.format('Normal:%s', vim_options.borderhighlight))
   end
 
+  -- enter
+  local should_enter = vim_options.enter
+  if should_enter == nil then
+    should_enter = true
+  end
+
+  if should_enter then
+    -- set focus after border creation so that it's properly placed (especially
+    -- in relative cursor layout)
+    vim.api.nvim_set_current_win(win_id)
+  end
+
+  -- callback
+  if vim_options.callback then
+    popup._callbacks[bufnr] = function()
+      -- (jbyuki): Giving win_id is pointless here because it's closed right afterwards
+      -- but it might make more sense once hidden is implemented
+      local row, _ = unpack(vim.api.nvim_win_get_cursor(win_id))
+      vim_options.callback(win_id, what[row])
+      vim.api.nvim_win_close(win_id, true)
+    end
+    vim.api.nvim_buf_set_keymap(bufnr, 'n', '<CR>', '<cmd>lua require"popup".execute_callback(' .. bufnr .. ')<CR>', {noremap = true})
+  end
+
   -- TODO: Perhaps there's a way to return an object that looks like a window id,
   --    but actually has some extra metadata about it.
   --
@@ -360,10 +382,12 @@ function popup.create(what, vim_options)
   }
 end
 
-function popup.show(self, asdf)
-end
-
-popup.show = function()
+function popup.execute_callback(bufnr)
+  if popup._callbacks[bufnr] then
+    local wrapper = popup._callbacks[bufnr]
+    wrapper()
+    popup._callbacks[bufnr] = nil
+  end
 end
 
 return popup
