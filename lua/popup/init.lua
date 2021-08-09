@@ -202,7 +202,7 @@ function popup.create(what, vim_options)
   if vim_options.hidden then
     assert(false, "I have not implemented this yet and don't know how")
   else
-    win_id = vim.fn.nvim_open_win(bufnr, false, win_opts)
+    win_id = vim.api.nvim_open_win(bufnr, false, win_opts)
   end
 
 
