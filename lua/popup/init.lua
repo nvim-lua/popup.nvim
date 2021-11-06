@@ -339,6 +339,12 @@ function popup.create(what, vim_options)
   local border = nil
   if should_show_border then
     border = Border:new(bufnr, win_id, win_opts, border_options)
+  else
+    if vim_options.title then
+      border_options.top = ' '
+      border_options.border_thickness = {top=1, bot=0, right=0, left=0}
+      border = Border:new(bufnr, win_id, win_opts, border_options)
+    end
   end
 
   if vim_options.highlight then
